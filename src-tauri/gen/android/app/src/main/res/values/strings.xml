@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">"TGDrive"</string>
+    <string name="main_activity_title">"TGDrive"</string>
+    <!-- Label for "Share → TGDrive" (AndroidManifest). -->
+    <string name="share_label">Send to TGDrive</string>
+    <!-- Transfer notification (TransferService). -->
+    <string name="transfers_preparing">Preparing transfers…</string>
+    <string name="transfers_queued_title">Transfers in queue</string>
+    <string name="transfers_channel">Transfers</string>
+    <string name="transfers_progress">%1$s of %2$s</string>
+    <plurals name="transfers_queued">
+        <item quantity="one">%d queued</item>
+        <item quantity="other">%d queued</item>
+    </plurals>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Label for "Share → TGDrive" (AndroidManifest). -->
+    <string name="share_label">Enviar ao TGDrive</string>
+    <!-- Transfer notification (TransferService). -->
+    <string name="transfers_preparing">Preparando transferências…</string>
+    <string name="transfers_queued_title">Transferências na fila</string>
+    <string name="transfers_channel">Transferências</string>
+    <string name="transfers_progress">%1$s de %2$s</string>
+    <plurals name="transfers_queued">
+        <item quantity="one">%d na fila</item>
+        <item quantity="many">%d na fila</item>
+        <item quantity="other">%d na fila</item>
+    </plurals>
+</resources>
