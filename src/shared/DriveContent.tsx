@@ -1,7 +1,6 @@
 import { Button } from "@tgcloud/ui/desktop/ui";
 import { EmptyState, ErrorState, SkeletonRows } from "@tgcloud/ui/ui/States";
 import { TransfersView } from "@tgcloud/ui/ui/Transfers";
-import { UpdateBanner } from "@tgcloud/ui/ui/Update";
 import { Clock, FolderOpen, Search, Trash2, Upload } from "lucide-react";
 import type { Node } from "../core/api";
 import { useFolder, useRecent, useSearch, useTrash } from "../core/data";
@@ -18,7 +17,7 @@ export function DriveContent() {
     <main {...handlers} className={`relative min-w-0 flex-1 overflow-y-auto px-4 ${over ? "bg-brand-soft/40" : ""}`}>
       {route.dest === "files" && route.folder === 0 && (
         <div className="px-6 pt-3 empty:hidden">
-          <UpdateBanner touch={false} />
+
         </div>
       )}
       {route.dest === "files" && <FolderPane id={route.folder} />}

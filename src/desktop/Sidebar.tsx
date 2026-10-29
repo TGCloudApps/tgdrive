@@ -1,3 +1,4 @@
+import { UpdateNotice } from "@tgcloud/ui/ui/Update";
 import { VaultPermissionNotice } from "@tgcloud/ui/ui/VaultPermissionNotice";
 import { openVaultMembers, canViewVaultMembers } from "@tgcloud/ui/core/vaultManagement";
 import { Users } from "lucide-react";
@@ -88,6 +89,7 @@ export function Sidebar({ session, onSignOut }: { session: Session; onSignOut: (
       </nav>
 
       <div className="border-t border-hairline p-3">
+        <UpdateNotice />
         <div className="flex items-center gap-2.5 rounded-lg px-1.5 py-1">
           <Avatar size={32} />
           <div className="min-w-0 flex-1">
