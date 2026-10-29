@@ -1,3 +1,6 @@
+import { vaultPhotoMock } from "@tgcloud/ui/core/vaultPhotoMock";
+import { vaultMock, mockVaultPermissions } from "@tgcloud/ui/core/vaultMock";
+import { useTransfers } from "@tgcloud/ui/core/transfers";
 /**
  * Simulated backend to develop the interface in the browser (`npm run dev`,
  * outside Tauri). Only loaded in DEV; it does not go into the app build.
@@ -39,7 +42,7 @@ const vaults: MockVault[] = [
   { id: 2, name: "Trabalho", title: "Trabalho.tgdrive", valid: true, unsupported: false, legacy: false, created_at: Date.now() - 12 * day * 1000, current: false },
   { id: 3, name: "Fotos antigas", title: "Fotos antigas.tgdrive", valid: false, unsupported: false, legacy: false, created_at: null, current: false },
   { id: 4, name: "TGDrive", title: "TGDrive", valid: false, unsupported: false, legacy: true, created_at: null, current: false },
-];
+].map(mockVaultPermissions);
 let currentVault: MockVault | null = new URLSearchParams(location.search).has("novault") ? null : vaults[0];
 
 const alive = (n: Node): boolean => {
@@ -53,19 +56,45 @@ const descendants = (id: number): number[] => nodes.filter((n) => n.parent_id ==
 
 type Args = Record<string, unknown>;
 
-const handlers: Record<string, (a: Args) => unknown> = {
-  status: () => ({ authorized: true, port: 0, vault: currentVault }),
-  sync_now: () => ({ pulled: 0, pushed: 0, compacted: false }),
-  kick_sync: () => {},
-  cached_vaults: () => [],
-  transfers: () => [
+let mockTransfers = [
     { id: 1, kind: "down", state: "active", name: "apresentacao.mp4", size: 734_003_200, done: 301_000_000, src: "", dest: "/home/u/Downloads/apresentacao.mp4", parent_id: 0, mime: "video/mp4", error: null, created_at: Date.now(), updated_at: Date.now() },
     { id: 2, kind: "down", state: "queued", name: "backup-servidor.tar.gz", size: 3_221_225_472, done: 0, src: "", dest: "/home/u/Downloads/backup-servidor.tar.gz", parent_id: 0, mime: "application/gzip", error: null, created_at: Date.now(), updated_at: Date.now() },
     { id: 3, kind: "down", state: "done", name: "relatorio-anual.pdf", size: 2_481_331, done: 2_481_331, src: "", dest: "/home/u/Downloads/relatorio-anual.pdf", parent_id: 0, mime: "application/pdf", error: null, created_at: Date.now(), updated_at: Date.now() },
     { id: 4, kind: "down", state: "error", name: "fontes.zip", size: 12_582_912, done: 4_000_000, src: "", dest: "/home/u/Downloads/fontes.zip", parent_id: 0, mime: "application/zip", error: "o conteúdo baixado não confere com o original (sha256)", created_at: Date.now(), updated_at: Date.now() },
     { id: 5, kind: "up", state: "paused", name: "ferias-2026.mov", size: 5_368_709_120, done: 1_610_612_736, src: "/home/u/Videos/ferias-2026.mov", dest: "", parent_id: 0, mime: "video/quicktime", error: null, created_at: Date.now(), updated_at: Date.now() },
     { id: 6, kind: "up", state: "done", name: "notas.md", size: 4_210, done: 4_210, src: "/home/u/notas.md", dest: "", parent_id: 0, mime: "text/markdown", error: null, created_at: Date.now(), updated_at: Date.now() },
-  ],
+  ];
+function changeTransfer(id: number, state: "paused" | "queued" | "canceled") {
+  mockTransfers = mockTransfers.map(item => item.id === id ? {...item, state, error:null} : item);
+  useTransfers.setState(s => ({list:s.list.map(item => item.id === id ? {...item,state,error:null} : item)}));
+}
+function removeTransfer(id: number) {
+  mockTransfers = mockTransfers.filter(item => item.id !== id);
+  useTransfers.setState(s => ({list:s.list.filter(item => item.id !== id)}));
+}
+
+const handlers: Record<string, (a: Args) => unknown> = {
+  ...vaultMock("tgdrive"),
+  peek_open: () => ({ items: Array.from({length: 24}, (_,i) => ({ uid: `preview-${i+1}`, name: `IMG_${i+1}.jpg`, mime: "image/jpeg", date: now - i * 86400, thumb: true })), albums: [{ uid: "preview-album", name: "Viagens", items: ["preview-1","preview-2","preview-3"] }] }),
+  status: () => ({ authorized: true, port: 0, vault: currentVault }),
+  sync_now: () => ({ pulled: 0, pushed: 0, compacted: false }),
+  kick_sync: () => {},
+  cached_vaults: () => [],
+  transfers: () => mockTransfers,
+  transfer_pause: a => changeTransfer(Number(a.id), "paused"),
+  transfer_resume: a => changeTransfer(Number(a.id), "queued"),
+  transfer_cancel: a => changeTransfer(Number(a.id), "canceled"),
+  transfer_remove: a => removeTransfer(Number(a.id)),
+  transfer_open: () => {},
+  transfers_bulk: a => {
+    for (const item of [...mockTransfers]) {
+      if (a.kind && item.kind !== a.kind) continue;
+      if (a.action === "clear" && ["done", "canceled"].includes(item.state)) removeTransfer(item.id);
+      else if (a.action === "pause" && ["active", "queued", "waiting"].includes(item.state)) changeTransfer(item.id, "paused");
+      else if (a.action === "resume" && ["paused", "error"].includes(item.state)) changeTransfer(item.id, "queued");
+      else if (a.action === "cancel" && !["done", "canceled"].includes(item.state)) changeTransfer(item.id, "canceled");
+    }
+  },
   list_vaults: () => vaults.map((v) => ({ ...v, current: v.id === currentVault?.id })),
   create_vault: (a) => {
     const v = { id: ++seq, name: String(a.name), title: `${a.name}.tgdrive`, valid: true, unsupported: false, legacy: false, created_at: Date.now(), current: true };
@@ -129,7 +158,7 @@ const handlers: Record<string, (a: Args) => unknown> = {
     if (a.password !== "12345678") throw new Error("senha incorreta");
   },
   copy_to_vault: () => 1,
-  vault_link: (a) => `https://t.me/c/${a.id}/1`,
+  vault_link: (a) => `https://t.me/+mock-vault-${a.id}`,
   delete_vault: () => {},
   local_link: () => {},
   copies: () => [],
@@ -190,6 +219,7 @@ export function mockFileUrl(id: number) {
 }
 
 export const mock: Mock = {
+  ...vaultPhotoMock(() => vaults, mockFileUrl),
   invoke: mockInvoke,
   fileUrl: mockFileUrl,
   upload: <T,>(file: File, params: Record<string, string>, onProgress: (sent: number) => void) => {

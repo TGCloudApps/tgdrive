@@ -103,6 +103,7 @@ export default {
   "signout.title": "¿Cerrar sesión?",
   "signout.body": "Tus archivos siguen en el canal. Para volver, solo inicia sesión de nuevo.",
 
+  "sort.direction": "Dirección",
   "sort.by": "Ordenar por",
   "sort.modified": "Modificado",
   "sort.size": "Tamaño",

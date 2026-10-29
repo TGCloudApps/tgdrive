@@ -122,7 +122,7 @@ function SearchBox({ inputRef, initial }: { inputRef: React.RefObject<HTMLInputE
 }
 
 /** Toolbar: selection actions on the left, view options on the right. */
-export function Toolbar() {
+export function Toolbar({ viewControls = true }: { viewControls?: boolean } = {}) {
   const route = useRoute();
   const count = useSelection((s) => s.ids.size);
   const view = useView();
@@ -139,10 +139,10 @@ export function Toolbar() {
           </span>
           {inTrash ? (
             <>
-              <Button variant="ghost" onClick={cmd.restore}>
+              <Button capability="write" variant="ghost" onClick={cmd.restore}>
                 <RotateCcw /> {ui("common.restore")}
               </Button>
-              <Button variant="ghost" onClick={cmd.trash} className="!text-danger">
+              <Button capability="trash" variant="ghost" onClick={cmd.trash} className="!text-danger">
                 <Trash2 /> {t("act.purge")}
               </Button>
             </>
@@ -152,17 +152,17 @@ export function Toolbar() {
                 <Download />
               </IconButton>
               {count === 1 && (
-                <IconButton label={t("act.renameKey")} onClick={cmd.rename}>
+                <IconButton capability="write" label={t("act.renameKey")} onClick={cmd.rename}>
                   <Pencil />
                 </IconButton>
               )}
-              <IconButton label={t("act.moveTo")} onClick={() => cmd.move("move")}>
+              <IconButton capability="write" label={t("act.moveTo")} onClick={() => cmd.move("move")}>
                 <FolderInput />
               </IconButton>
-              <IconButton label={t("act.copyTo")} onClick={() => cmd.move("copy")}>
+              <IconButton capability="write" label={t("act.copyTo")} onClick={() => cmd.move("copy")}>
                 <Copy />
               </IconButton>
-              <IconButton label={t("act.trashKey")} onClick={cmd.trash}>
+              <IconButton capability="trash" label={t("act.trashKey")} onClick={cmd.trash}>
                 <Trash2 />
               </IconButton>
             </>
@@ -172,12 +172,12 @@ export function Toolbar() {
           </IconButton>
         </div>
       ) : inTrash && trash.length > 0 ? (
-        <Button variant="ghost" onClick={() => nav.open({ type: "confirm", action: "empty", ids: [] })}>
+        <Button capability="trash" variant="ghost" onClick={() => nav.open({ type: "confirm", action: "empty", ids: [] })}>
           <Trash2 /> {t("act.emptyTrash")}
         </Button>
       ) : null}
       <div className="flex-1" />
-      {route.dest !== "transfers" && (
+      {viewControls && route.dest !== "transfers" && (
         <>
           <IconButton label={t("view.list")} active={view.layout === "list"} onClick={() => view.set({ layout: "list" })}>
             <List />

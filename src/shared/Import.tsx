@@ -1,3 +1,6 @@
+import { useVaultPermission } from "@tgcloud/ui/core/vaultPermissions";
+import { VaultPermissionNotice } from "@tgcloud/ui/ui/VaultPermissionNotice";
+import { currentVault } from "@tgcloud/ui/core/vault";
 /**
  * Import from TGPhotos: choose the vault and what to bring (everything or one album)
  * into the current folder. The files are forwarded between the channels (nothing is
@@ -11,6 +14,7 @@ import { errText, invoke } from "@tgcloud/ui/core/server";
 import { api } from "../core/api";
 import { nav } from "../core/nav";
 import { t } from "../i18n";
+import { t as tc } from "@tgcloud/ui/i18n/ui";
 
 type Media = { uid: string; name: string; mime: string; size: number; taken: number; duration: number | null; albums: string[] };
 type Album = { uid: string; name: string; count: number };
@@ -18,6 +22,7 @@ type Library = { media: Media[]; albums: Album[] };
 type Report = { imported: number; failed: number };
 
 export function ImportView({ touch, parent }: { touch: boolean; parent: number }) {
+  const mayWrite = useVaultPermission("write");
   const [vaults, setVaults] = useState<ForeignVault[] | null>(null);
   const [vault, setVault] = useState<ForeignVault | null>(null);
   const [lib, setLib] = useState<Library | null>(null);
@@ -71,6 +76,7 @@ export function ImportView({ touch, parent }: { touch: boolean; parent: number }
   ];
 
   const start = () => {
+    if (!mayWrite) return;
     const uids = chosen.map((m) => m.uid);
     const name = albumName ?? vault.name;
     const v = vault;
@@ -85,6 +91,11 @@ export function ImportView({ touch, parent }: { touch: boolean; parent: number }
 
   return (
     <div className="flex min-h-0 flex-col">
+      <div className="mb-4 space-y-2 rounded-xl border border-hairline bg-s2 p-4">
+        <p className="text-sm text-fg-2">{tc("import.flowSource", { name: vault.name })}</p>
+        <p className="font-semibold">{tc("import.flowTarget", { name: currentVault()?.name ?? "" })}</p>
+        <button type="button" onClick={() => { setVault(null); setError(""); }} className="min-h-10 rounded-lg px-3 font-semibold text-accent hover:bg-s3">{tc("import.changeSource")}</button>
+      </div>
       <div className={`min-h-0 overflow-y-auto ${touch ? "max-h-[48vh]" : "max-h-[50vh]"}`}>
         {options.map((o) => (
           <button key={o.uid || "all"} onClick={() => setPick(o.uid)} className={`flex w-full items-center gap-3 text-left ${row} ${touch ? "active:bg-s4" : "hover:bg-s3"}`}>
@@ -103,8 +114,9 @@ export function ImportView({ touch, parent }: { touch: boolean; parent: number }
           </span>
           {t("import.createFolder", { name: albumName ?? vault.name })}
         </button>
+        <VaultPermissionNotice />
         <button
-          disabled={!chosen.length}
+          disabled={!chosen.length || !mayWrite}
           onClick={start}
           className={`step mt-4 w-full rounded-xl bg-brand font-semibold text-white disabled:bg-s3 disabled:text-fg-off disabled:shadow-none ${touch ? "h-12 text-[15px]" : "h-9 text-[14px]"}`}
         >

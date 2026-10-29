@@ -1,3 +1,7 @@
+import { canUseVault } from "@tgcloud/ui/core/vaultPermissions";
+import { useVaultPermission } from "@tgcloud/ui/core/vaultPermissions";
+import { openVaultMembers, VaultMembersGate } from "@tgcloud/ui/core/vaultManagement";
+import { Users } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PresenceList } from "@tgcloud/ui/ui/Presence";
 import { UpdateBanner } from "@tgcloud/ui/ui/Update";
@@ -74,7 +78,8 @@ export default function MobileApp({ session }: { session: Session }) {
   }, []);
 
   const parent = route.dest === "files" ? route.folder : 0;
-  const showFab = !selecting && (route.dest === "files" || route.dest === "recent");
+  const mayWrite = useVaultPermission("write");
+  const showFab = mayWrite && !selecting && (route.dest === "files" || route.dest === "recent");
 
   return (
     <div className="flex h-full flex-col bg-canvas">
@@ -145,13 +150,13 @@ function AppBar() {
         {icon(t("sel.cancel"), <X size={22} />, nav.close)}
         <p className="flex-1 text-[18px] font-semibold tabular">{ids.length}</p>
         {inTrash ? (
-          icon(ui("common.restore"), <RotateCcw size={22} />, () => nav.closeThen(() => actions.restore(ids)))
+          canUseVault("write") && icon(ui("common.restore"), <RotateCcw size={22} />, () => nav.closeThen(() => actions.restore(ids)))
         ) : (
           <>
             {icon(ui("common.move"), <FolderInput size={22} />, () => nav.open({ type: "move", ids, mode: "move" }))}
             {icon(ui("common.copy"), <Copy size={22} />, () => nav.open({ type: "move", ids, mode: "copy" }))}
             {onAndroid && icon(ui("common.download"), <Download size={22} />, () => nav.closeThen(() => void downloadNodes(ids)))}
-            {icon(t("act.trash"), <Trash2 size={22} />, () => nav.closeThen(() => actions.trash(ids)))}
+            {canUseVault("trash") && icon(t("act.trash"), <Trash2 size={22} />, () => nav.closeThen(() => actions.trash(ids)))}
           </>
         )}
         {icon(ui("common.more"), <MoreVertical size={22} />, () => nav.open({ type: "actions", ids }))}
@@ -187,7 +192,7 @@ function AppBar() {
         <TransferChip onOpen={() => nav.dest("transfers")} />
       {icon(ui("common.search"), <Search size={22} />, () => nav.search(""))}
       {route.dest === "trash" ? (
-        icon(t("act.emptyTrash"), <Trash2 size={20} />, () => nav.open({ type: "confirm", action: "empty", ids: [] }))
+        canUseVault("trash") && icon(t("act.emptyTrash"), <Trash2 size={20} />, () => nav.open({ type: "confirm", action: "empty", ids: [] }))
       ) : route.dest === "files" ? (
         <>
           {icon(t("act.view"), <SlidersHorizontal size={20} />, () => nav.open({ type: "sort" }))}
@@ -435,7 +440,7 @@ function Layers({ fileInput, parent, session }: { fileInput: React.RefObject<HTM
           case "receive":
             return <ReceiveSheet key={key} layer={l} />;
           case "send-vault":
-            return <SendToVault key={key} ids={l.ids} touch onClose={nav.close} />;
+            return <SendToVault key={key} ids={l.ids} other={l.other} touch onClose={nav.close} />;
           case "language":
             return (
               <Sheet key={key} title={<p className="text-[16px] font-semibold">{ui("common.language")}</p>}>
@@ -478,6 +483,9 @@ function AccountSheet({ session }: { session: Session }) {
         </div>
       }
     >
+      <VaultMembersGate><SheetItem icon={<Users />} onClick={() => nav.closeThen(openVaultMembers)}>
+        {ui("members.title")}
+      </SheetItem></VaultMembersGate>
       <SheetItem icon={<Repeat />} onClick={() => nav.closeThen(session.switchVault)}>
         {t("account.switch")}
       </SheetItem>

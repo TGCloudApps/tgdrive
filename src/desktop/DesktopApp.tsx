@@ -1,25 +1,19 @@
-import { useEffect, useRef } from "react";
-import { UpdateBanner } from "@tgcloud/ui/ui/Update";
-import { Clock, FolderOpen, Search, Trash2, Upload } from "lucide-react";
-import type { Node } from "../core/api";
-import type { Session } from "../App";
-import { findNode, refreshSoon, useFolder, useRecent, useSearch, useTrash } from "../core/data";
-import { nav, useLayers, useRoute } from "../core/nav";
-import { uploads, useSelection, useUploads } from "../core/store";
+import { canUseVault } from "@tgcloud/ui/core/vaultPermissions";
 import { isTauri } from "@tauri-apps/api/core";
-import { EmptyState, ErrorState, SkeletonRows } from "@tgcloud/ui/ui/States";
-import { ContextMenu, closeMenu, useMenu } from "@tgcloud/ui/desktop/Menu";
-import { FileView } from "./FileTable";
-import { DeskLayers, DetailsPanel } from "./Layers";
-import { Sidebar } from "./Sidebar";
+import { ContextMenu,closeMenu,useMenu } from "@tgcloud/ui/desktop/Menu";
 import { Toasts } from "@tgcloud/ui/desktop/Toasts";
-import { TransfersView } from "@tgcloud/ui/ui/Transfers";
-import { transfers } from "@tgcloud/ui/core/transfers";
-import { Toolbar, TopBar } from "./TopBar";
-import { useDrop } from "./dnd";
-import { cmd, targetFolder, useDesk } from "./state";
-import { Button } from "@tgcloud/ui/desktop/ui";
-import { t } from "../i18n";
+import { useEffect,useRef } from "react";
+import type { Session } from "../App";
+import { findNode,refreshSoon } from "../core/data";
+import { nav,useLayers,useRoute } from "../core/nav";
+import { uploads,useSelection,useUploads } from "../core/store";
+import { DriveContent } from "../shared/DriveContent";
+import { pickNative } from "../shared/pickFiles";
+import { useOsDrop } from "../shared/useFileDrop";
+import { DeskLayers,DetailsPanel } from "./Layers";
+import { Sidebar } from "./Sidebar";
+import { Toolbar,TopBar } from "./TopBar";
+import { cmd,targetFolder,useDesk } from "./state";
 
 export default function DesktopApp({ session }: { session: Session }) {
   const route = useRoute();
@@ -32,8 +26,8 @@ export default function DesktopApp({ session }: { session: Session }) {
   useEffect(() => {
     useDesk.setState({
       // In the app, the native picker (Rust reads from disk); in the browser (dev mode), the page one.
-      pickFiles: () => (isTauri() ? void pickNative(false) : fileInput.current?.click()),
-      pickFolder: () => isTauri() && void pickNative(true),
+      pickFiles: () => canUseVault("write") && (isTauri() ? void pickNative(false) : fileInput.current?.click()),
+      pickFolder: () => canUseVault("write") && isTauri() && void pickNative(true),
     });
     useUploads.setState({ onDone: refreshSoon });
   }, []);
@@ -65,7 +59,7 @@ export default function DesktopApp({ session }: { session: Session }) {
         <div className="flex min-h-0 flex-1">
           <div className="flex min-w-0 flex-1 flex-col">
             <Toolbar />
-            <Content />
+            <DriveContent />
           </div>
           {details && <DetailsPanel node={detailNode} />}
         </div>
@@ -74,77 +68,6 @@ export default function DesktopApp({ session }: { session: Session }) {
       <DeskLayers onSignedOut={session.signOut} />
       <Toasts onOpenTransfers={() => nav.dest("transfers")} />
     </div>
-  );
-}
-
-function Content() {
-  const route = useRoute();
-  const { over, handlers } = useDrop(route.dest === "files" ? route.folder : null);
-  return (
-    <main {...handlers} className={`relative min-w-0 flex-1 overflow-y-auto px-4 ${over ? "bg-brand-soft/40" : ""}`}>
-      {route.dest === "files" && route.folder === 0 && (
-        <div className="px-6 pt-3 empty:hidden">
-          <UpdateBanner touch={false} />
-        </div>
-      )}
-      {route.dest === "files" && <FolderPane id={route.folder} />}
-      {route.dest === "recent" && <RecentPane />}
-      {route.dest === "trash" && <TrashPane />}
-      {route.dest === "search" && <SearchPane text={route.query} />}
-      {route.dest === "transfers" && <TransfersView touch={false} />}
-      {over && (
-        <div className="pointer-events-none absolute inset-3 grid place-items-center rounded-2xl border-2 border-dashed border-brand text-[14px] font-semibold text-fg">
-          {t("drop")}
-        </div>
-      )}
-    </main>
-  );
-}
-
-type Q = { data?: Node[]; isLoading: boolean; error: unknown; refetch: () => void };
-
-function Pane({ q, empty, sortable = true }: { q: Q; empty: React.ReactNode; sortable?: boolean }) {
-  if (q.isLoading) return <SkeletonRows rows={10} height={36} />;
-  if (q.error) return <ErrorState error={q.error} retry={q.refetch} />;
-  if (!q.data?.length) return <>{empty}</>;
-  return <FileView nodes={q.data} sortable={sortable} />;
-}
-
-function FolderPane({ id }: { id: number }) {
-  return (
-    <Pane
-      q={useFolder(id)}
-      empty={
-        <EmptyState
-          icon={FolderOpen}
-          title={id === 0 ? t("empty.drive") : t("empty.folder")}
-          text={t("empty.deskHint")}
-          action={
-            <Button variant="primary" onClick={() => useDesk.getState().pickFiles()}>
-              <Upload /> {t("act.uploadFiles")}
-            </Button>
-          }
-        />
-      }
-    />
-  );
-}
-
-const RecentPane = () => (
-  <Pane q={useRecent()} sortable={false} empty={<EmptyState icon={Clock} title={t("empty.recent")} text={t("empty.recentText")} />} />
-);
-
-const TrashPane = () => (
-  <Pane q={useTrash()} empty={<EmptyState icon={Trash2} title={t("empty.trash")} text={t("empty.trashText")} />} />
-);
-
-function SearchPane({ text }: { text: string }) {
-  const q = useSearch(text);
-  return (
-    <Pane
-      q={{ ...q, isLoading: q.isLoading && q.fetchStatus !== "idle" }}
-      empty={<EmptyState icon={Search} title={t("search.none")} text={t("search.noneText", { text })} />}
-    />
   );
 }
 
@@ -251,50 +174,4 @@ function useShortcuts(searchRef: React.RefObject<HTMLInputElement | null>) {
   }, [layers, searchRef]);
 
   useEffect(() => closeMenu, []);
-}
-
-async function pickNative(directory: boolean) {
-  const { open } = await import("@tauri-apps/plugin-dialog");
-  const picked = await open({ multiple: !directory, directory, title: directory ? t("act.uploadFolder") : t("act.uploadFiles") });
-  if (!picked) return;
-  const paths = Array.isArray(picked) ? picked : [picked];
-  void transfers.uploadPaths(paths, targetFolder());
-}
-
-/**
- * Drags files and folders from the system (Tauri native event, which delivers the
- * paths). The target is the folder under the pointer (`data-drop-folder`); outside
- * a folder, the open folder.
- */
-function useOsDrop() {
-  useEffect(() => {
-    if (!isTauri()) return;
-    const folderAt = (x: number, y: number) => {
-      const dpr = window.devicePixelRatio || 1;
-      const el = document.elementFromPoint(x / dpr, y / dpr)?.closest<HTMLElement>("[data-drop-folder]");
-      return el ? Number(el.dataset.dropFolder) : null;
-    };
-    // Registration is asynchronous: if cleanup runs first (StrictMode mounts
-    // twice), unregister as soon as the promise resolves. Without this two
-    // handlers would remain and each dropped file would be uploaded twice.
-    let off: (() => void) | undefined;
-    let disposed = false;
-    import("@tauri-apps/api/webview").then(async ({ getCurrentWebview }) => {
-      const unlisten = await getCurrentWebview().onDragDropEvent(({ payload: p }) => {
-        if (p.type === "enter" || p.type === "over") useDesk.setState({ osDrop: folderAt(p.position.x, p.position.y) });
-        else if (p.type === "leave") useDesk.setState({ osDrop: null });
-        else if (p.type === "drop") {
-          const folder = folderAt(p.position.x, p.position.y);
-          useDesk.setState({ osDrop: null });
-          if (folder !== null && p.paths.length) void transfers.uploadPaths(p.paths, folder);
-        }
-      });
-      if (disposed) unlisten();
-      else off = unlisten;
-    });
-    return () => {
-      disposed = true;
-      off?.();
-    };
-  }, []);
 }

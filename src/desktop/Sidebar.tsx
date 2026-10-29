@@ -1,3 +1,6 @@
+import { VaultPermissionNotice } from "@tgcloud/ui/ui/VaultPermissionNotice";
+import { openVaultMembers, canViewVaultMembers } from "@tgcloud/ui/core/vaultManagement";
+import { Users } from "lucide-react";
 import { ArrowDownUp, ChevronsUpDown, Clock, FolderPlus, FolderUp, HardDrive, Images, LogOut, Plus, RefreshCw, Repeat, Trash2, Upload } from "lucide-react";
 import { VaultAvatar } from "@tgcloud/ui/ui/VaultAvatar";
 import { useCurrentVault } from "@tgcloud/ui/core/vault";
@@ -33,6 +36,7 @@ export function Sidebar({ session, onSignOut }: { session: Session; onSignOut: (
         onClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
           openMenu(r.left + 8, r.bottom, [
+            ...(canViewVaultMembers() ? [{ label: ui("members.title"), icon: h(Users), run: openVaultMembers }] : []),
             { label: t("account.switchMenu"), icon: h(Repeat), run: session.switchVault },
             { label: t("account.sync"), icon: h(RefreshCw), run: () => void api.syncNow().then(() => refresh()).catch(notifyError) },
             { label: t("account.languageMenu"), icon: h(Globe), run: () => nav.open({ type: "language" }) },
@@ -51,19 +55,19 @@ export function Sidebar({ session, onSignOut }: { session: Session; onSignOut: (
         <ChevronsUpDown size={16} className="shrink-0 text-fg-3" />
       </button>
 
-      <div className="px-3 pb-3">
-        <button
+      <div className="px-3 pb-3"><VaultPermissionNotice />
+        <button disabled={vault?.can_post === false}
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect();
             openMenu(r.left, r.bottom + 4, [
-              { label: t("act.uploadFilesMenu"), icon: h(Upload), shortcut: "Mod+U", run: () => useDesk.getState().pickFiles() },
-              { label: t("act.uploadFolderMenu"), icon: h(FolderUp), run: () => useDesk.getState().pickFolder() },
-              { label: ui("common.newFolder"), icon: h(FolderPlus), shortcut: "Mod+Shift+N", run: cmd.newFolder },
+              { capability: "write" as const, label: t("act.uploadFilesMenu"), icon: h(Upload), shortcut: "Mod+U", run: () => useDesk.getState().pickFiles() },
+              { capability: "write" as const, label: t("act.uploadFolderMenu"), icon: h(FolderUp), run: () => useDesk.getState().pickFolder() },
+              { capability: "write" as const, label: ui("common.newFolder"), icon: h(FolderPlus), shortcut: "Mod+Shift+N", run: cmd.newFolder },
               "sep",
-              { label: t("act.importPhotosMenu"), icon: h(Images), run: () => nav.open({ type: "import", parent: targetFolder() }) },
+              { capability: "write" as const, label: t("act.importPhotosMenu"), icon: h(Images), run: () => nav.open({ type: "import", parent: targetFolder() }) },
             ]);
           }}
-          className="step flex h-10 w-full items-center gap-2 rounded-lg bg-brand px-3.5 text-[14px] font-semibold text-white hover:brightness-110 active:translate-y-0.5 active:shadow-none"
+          className="step disabled:bg-s3 disabled:text-fg-off disabled:opacity-60 disabled:shadow-none flex h-10 w-full items-center gap-2 rounded-lg bg-brand px-3.5 text-[14px] font-semibold text-white hover:brightness-110 active:translate-y-0.5 active:shadow-none"
         >
           <Plus size={18} /> {t("new")}
         </button>

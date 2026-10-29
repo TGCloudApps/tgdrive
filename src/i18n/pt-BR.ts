@@ -101,6 +101,7 @@ export default {
   "signout.title": "Sair da conta?",
   "signout.body": "Seus arquivos continuam no canal. Para voltar, é só entrar de novo.",
 
+  "sort.direction": "Direção",
   "sort.by": "Ordenar por",
   "sort.modified": "Modificado",
   "sort.size": "Tamanho",

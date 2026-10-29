@@ -1,3 +1,5 @@
+import { canUseVault } from "@tgcloud/ui/core/vaultPermissions";
+import { canTrash } from "@tgcloud/ui/core/vault";
 /** State and commands of the desktop shell (selection, clipboard, menus). */
 import { createElement as h } from "react";
 import { create } from "zustand";
@@ -9,6 +11,7 @@ import { useClipboard, useSelection } from "../core/store";
 import { transfers } from "@tgcloud/ui/core/transfers";
 import type { MenuEntry } from "@tgcloud/ui/desktop/Menu";
 import { t } from "../i18n";
+import { t as tc } from "@tgcloud/ui/i18n/ui";
 import { t as ui } from "@tgcloud/ui/i18n/ui";
 
 
@@ -57,23 +60,28 @@ export const cmd = {
     if (sel.length === 1) cmd.open(sel[0]);
   },
   rename() {
+    if (!canUseVault("write")) return;
     const sel = selectedNodes();
     if (sel.length === 1) useDesk.setState({ renaming: sel[0].id });
   },
   newFolder() {
+    if (!canUseVault("write")) return;
     nav.open({ type: "name", mode: "mkdir", parent: targetFolder() });
   },
   trash() {
+    if (!canUseVault("trash")) return;
     const ids = [...useSelection.getState().ids];
     if (!ids.length) return;
     if (nav.route().dest === "trash") nav.open({ type: "confirm", action: "purge", ids });
     else actions.trash(ids);
   },
   restore() {
+    if (!canUseVault("write")) return;
     const ids = [...useSelection.getState().ids];
     if (ids.length) actions.restore(ids);
   },
   move(mode: "move" | "copy") {
+    if (!canUseVault("write")) return;
     const ids = [...useSelection.getState().ids];
     if (ids.length) nav.open({ type: "move", ids, mode });
   },
@@ -82,10 +90,12 @@ export const cmd = {
     if (ids.length) useClipboard.setState({ ids, mode: "copy" });
   },
   cut() {
+    if (!canUseVault("write")) return;
     const ids = [...useSelection.getState().ids];
     if (ids.length) useClipboard.setState({ ids, mode: "move" });
   },
   async paste() {
+    if (!canUseVault("write")) return;
     const { ids, mode } = useClipboard.getState();
     if (!ids.length || !mode || nav.route().dest !== "files") return;
     const parent = targetFolder();
@@ -117,7 +127,7 @@ export function itemMenu(): MenuEntry[] {
     return [
       { label: ui("common.restore"), icon: h(RotateCcw), run: cmd.restore },
       "sep",
-      { label: t("act.purge"), icon: h(Trash2), danger: true, shortcut: "Delete", run: cmd.trash },
+      ...(canTrash() ? [{ capability: "trash" as const, label: t("act.purge"), icon: h(Trash2), danger: true, shortcut: "Delete", run: cmd.trash }] : []),
     ];
   return [
     ...(one
@@ -126,19 +136,20 @@ export function itemMenu(): MenuEntry[] {
           { label: ui("common.download"), icon: h(Download), shortcut: "Mod+D", run: cmd.download },
           ...(one.is_dir ? [] : [{ label: t("act.saveAs"), icon: h(Save), run: cmd.saveAs }]),
           "sep",
-          { label: ui("common.rename"), icon: h(Pencil), shortcut: "F2", run: cmd.rename },
+          { capability: "write" as const, label: ui("common.rename"), icon: h(Pencil), shortcut: "F2", run: cmd.rename },
         ] as MenuEntry[])
       : sel.length > 1
         ? ([{ label: t("act.downloadN", { n: sel.length }), icon: h(Download), shortcut: "Mod+D", run: cmd.download }, "sep"] as MenuEntry[])
         : []),
-    { label: t("act.cut"), icon: h(Scissors), shortcut: "Mod+X", run: cmd.cut },
+    { capability: "write" as const, label: t("act.cut"), icon: h(Scissors), shortcut: "Mod+X", run: cmd.cut },
     { label: ui("common.copy"), icon: h(Copy), shortcut: "Mod+C", run: cmd.copy },
-    { label: t("act.moveTo"), icon: h(FolderInput), run: () => cmd.move("move") },
-    { label: t("act.copyTo"), icon: h(Copy), run: () => cmd.move("copy") },
+    { capability: "write" as const, label: t("act.moveTo"), icon: h(FolderInput), run: () => cmd.move("move") },
+    { capability: "write" as const, label: t("act.copyTo"), icon: h(Copy), run: () => cmd.move("copy") },
     { label: t("act.sendVaultMenu"), icon: h(Send), run: () => nav.open({ type: "send-vault", ids: sel.map((n) => n.id) }) },
+    { label: tc("cross.title", { app: "TGPhotos" }), icon: h(Send), run: () => nav.open({ type: "send-vault", other: true, ids: sel.map((n) => n.id) }) },
     "sep",
     ...(one ? ([{ label: t("act.details"), icon: h(Info), shortcut: "Mod+I", run: () => useDesk.setState({ details: true }) }] as MenuEntry[]) : []),
-    { label: t("act.trash"), icon: h(Trash2), danger: true, shortcut: "Delete", run: cmd.trash },
+    ...(canTrash() ? [{ capability: "trash" as const, label: t("act.trash"), icon: h(Trash2), danger: true, shortcut: "Delete", run: cmd.trash }] : []),
   ];
 }
 
@@ -148,11 +159,12 @@ export function backgroundMenu(): MenuEntry[] {
   if (dest !== "files") return [];
   const clip = useClipboard.getState();
   return [
-    { label: ui("common.newFolder"), icon: h(FolderPlus), shortcut: "Mod+Shift+N", run: cmd.newFolder },
-    { label: t("act.uploadFilesMenu"), icon: h(Upload), shortcut: "Mod+U", run: () => useDesk.getState().pickFiles() },
-    { label: t("act.uploadFolderMenu"), icon: h(FolderUp), run: () => useDesk.getState().pickFolder() },
+    { capability: "write" as const, label: ui("common.newFolder"), icon: h(FolderPlus), shortcut: "Mod+Shift+N", run: cmd.newFolder },
+    { capability: "write" as const, label: t("act.uploadFilesMenu"), icon: h(Upload), shortcut: "Mod+U", run: () => useDesk.getState().pickFiles() },
+    { capability: "write" as const, label: t("act.uploadFolderMenu"), icon: h(FolderUp), run: () => useDesk.getState().pickFolder() },
     "sep",
     {
+      capability: "write",
       label: clip.ids.length ? t("act.pasteN", { n: clip.ids.length }) : t("act.paste"),
       icon: h(ClipboardPaste),
       shortcut: "Mod+V",

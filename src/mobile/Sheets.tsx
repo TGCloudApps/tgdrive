@@ -1,3 +1,4 @@
+import { VaultPermissionNotice } from "@tgcloud/ui/ui/VaultPermissionNotice";
 import { useState, type RefObject } from "react";
 import {
   ArrowDownAZ,
@@ -34,6 +35,7 @@ import { FileIcon, FileTile } from "@tgcloud/ui/media/FileIcon";
 import { ImportView } from "../shared/Import";
 import { Sheet, SheetButton, SheetItem } from "@tgcloud/ui/ui/Sheet";
 import { t } from "../i18n";
+import { t as tc } from "@tgcloud/ui/i18n/ui";
 import { t as ui } from "@tgcloud/ui/i18n/ui";
 
 
@@ -55,18 +57,19 @@ export function NewSheet({ fileInput, parent }: { fileInput: RefObject<HTMLInput
     });
   return (
     <Sheet>
-      <SheetItem icon={<Upload />} onClick={() => pick(false)}>
+      <VaultPermissionNotice />
+      <SheetItem capability="write" icon={<Upload />} onClick={() => pick(false)}>
         {t("act.uploadFiles")}
       </SheetItem>
       {onAndroid && (
-        <SheetItem icon={<FolderUp />} onClick={() => pick(true)}>
+        <SheetItem capability="write" icon={<FolderUp />} onClick={() => pick(true)}>
           {t("act.uploadFolder")}
         </SheetItem>
       )}
-      <SheetItem icon={<FolderPlus />} onClick={() => nav.replaceTop({ type: "name", mode: "mkdir", parent })}>
+      <SheetItem capability="write" icon={<FolderPlus />} onClick={() => nav.replaceTop({ type: "name", mode: "mkdir", parent })}>
         {ui("common.newFolder")}
       </SheetItem>
-      <SheetItem icon={<Images />} onClick={() => nav.replaceTop({ type: "import", parent })}>
+      <SheetItem capability="write" icon={<Images />} onClick={() => nav.replaceTop({ type: "import", parent })}>
         {t("act.importPhotos")}
       </SheetItem>
     </Sheet>
@@ -96,10 +99,10 @@ export function ActionsSheet({ ids }: { ids: number[] }) {
   if (inTrash)
     return (
       <Sheet title={header}>
-        <SheetItem icon={<RotateCcw />} onClick={() => after(() => actions.restore(ids))}>
+        <SheetItem capability="write" icon={<RotateCcw />} onClick={() => after(() => actions.restore(ids))}>
           {ui("common.restore")}
         </SheetItem>
-        <SheetItem icon={<Trash2 />} danger onClick={() => nav.replaceTop({ type: "confirm", action: "purge", ids })}>
+        <SheetItem capability="trash" icon={<Trash2 />} danger onClick={() => nav.replaceTop({ type: "confirm", action: "purge", ids })}>
           {t("act.purge")}
         </SheetItem>
       </Sheet>
@@ -140,15 +143,18 @@ export function ActionsSheet({ ids }: { ids: number[] }) {
         </SheetItem>
       )}
       {one && (
-        <SheetItem icon={<Pencil />} onClick={() => nav.replaceTop({ type: "name", mode: "rename", id: one.id, parent: one.parent_id })}>
+        <SheetItem capability="write" icon={<Pencil />} onClick={() => nav.replaceTop({ type: "name", mode: "rename", id: one.id, parent: one.parent_id })}>
           {ui("common.rename")}
         </SheetItem>
       )}
-      <SheetItem icon={<FolderInput />} onClick={() => nav.replaceTop({ type: "move", ids, mode: "move" })}>
+      <SheetItem capability="write" icon={<FolderInput />} onClick={() => nav.replaceTop({ type: "move", ids, mode: "move" })}>
         {ui("common.move")}
       </SheetItem>
-      <SheetItem icon={<Copy />} onClick={() => nav.replaceTop({ type: "move", ids, mode: "copy" })}>
+      <SheetItem capability="write" icon={<Copy />} onClick={() => nav.replaceTop({ type: "move", ids, mode: "copy" })}>
         {t("act.makeCopy")}
+      </SheetItem>
+      <SheetItem icon={<Send />} onClick={() => nav.replaceTop({ type: "send-vault", ids, other: true })}>
+        {tc("cross.title", { app: "TGPhotos" })}
       </SheetItem>
       <SheetItem icon={<Send />} onClick={() => nav.replaceTop({ type: "send-vault", ids })}>
         {t("act.sendVault")}
@@ -159,7 +165,7 @@ export function ActionsSheet({ ids }: { ids: number[] }) {
         </SheetItem>
       )}
       <div className="my-1 border-t border-hairline" />
-      <SheetItem icon={<Trash2 />} danger onClick={() => after(() => actions.trash(ids))}>
+      <SheetItem capability="trash" icon={<Trash2 />} danger onClick={() => after(() => actions.trash(ids))}>
         {t("act.trash")}
       </SheetItem>
     </Sheet>

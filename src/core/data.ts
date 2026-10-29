@@ -1,3 +1,4 @@
+import { canUseVault } from "@tgcloud/ui/core/vaultPermissions";
 /** Queries (React Query over the core commands) and file actions. */
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { save } from "@tauri-apps/plugin-dialog";
@@ -51,6 +52,7 @@ export const actions = {
   rename: (id: number, name: string) => run(api.rename(id, name)),
 
   async trash(ids: number[]) {
+    if (!canUseVault("trash")) return;
     await run(api.trash(ids));
     useSelection.getState().clear();
     notify({
@@ -61,27 +63,32 @@ export const actions = {
   },
 
   async restore(ids: number[]) {
+    if (!canUseVault("write")) return;
     await run(api.restore(ids));
     notify({ text: t("toast.restored", { n: ids.length }), tone: "success" });
   },
 
   async purge(ids: number[]) {
+    if (!canUseVault("trash")) return;
     await run(api.purge(ids));
     notify({ text: t("toast.purged", { n: ids.length }), tone: "neutral" });
   },
 
   async emptyTrash() {
+    if (!canUseVault("trash")) return;
     await run(api.emptyTrash());
     notify({ text: t("toast.emptied"), tone: "neutral" });
   },
 
   async move(ids: number[], parent: number, folderName: string) {
+    if (!canUseVault("write")) return;
     await run(api.move(ids, parent));
     useSelection.getState().clear();
     notify({ text: t("toast.moved", { n: ids.length, to: folderName }), tone: "neutral" });
   },
 
   async copy(ids: number[], parent: number, folderName: string) {
+    if (!canUseVault("write")) return;
     await run(api.copy(ids, parent));
     notify({ text: t("toast.copied", { n: ids.length, to: folderName }), tone: "neutral" });
   },

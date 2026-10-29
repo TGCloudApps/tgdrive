@@ -103,6 +103,7 @@ export default {
   "signout.title": "Sign out?",
   "signout.body": "Your files stay in the channel. To come back, just sign in again.",
 
+  "sort.direction": "Direction",
   "sort.by": "Sort by",
   "sort.modified": "Modified",
   "sort.size": "Size",

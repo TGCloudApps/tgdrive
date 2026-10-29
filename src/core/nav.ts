@@ -27,7 +27,7 @@ export type Layer =
   | { type: "receive"; items: { uri: string; name: string; size: number; mime: string; path: string }[] }
   | { type: "import"; parent: number }
   /** Send (copy) to another vault. */
-  | { type: "send-vault"; ids: number[] };
+  | { type: "send-vault"; ids: number[]; other?: boolean };
 
 const ROOT: Route = { dest: "files", folder: 0, query: "" };
 

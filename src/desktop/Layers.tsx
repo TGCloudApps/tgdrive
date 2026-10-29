@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { detectShell } from "@tgcloud/ui/core/platform";
+import { TVOptions } from "@tgcloud/ui/tv/TVShell";
 import { PresenceList } from "@tgcloud/ui/ui/Presence";
 import { ChevronRight, CornerLeftUp, Trash2, X } from "lucide-react";
 import type { Node } from "../core/api";
@@ -40,7 +42,7 @@ function DeskLayer({ top, onSignedOut, n }: { top: Layer; onSignedOut: () => voi
     case "viewer":
       return <Viewer key="viewer" layer={top} touch={false} />;
     case "send-vault":
-      return <SendToVault key={n} ids={top.ids} touch={false} onClose={nav.close} />;
+      return <SendToVault key={n} ids={top.ids} other={top.other} touch={false} onClose={nav.close} />;
     case "import":
       return (
         <Dialog key={n} onClose={nav.close} width={520}>
@@ -106,6 +108,20 @@ function MoveDialog({ layer }: { layer: Extract<Layer, { type: "move" }> }) {
       if (layer.mode === "move") actions.move(layer.ids, at, name);
       else actions.copy(layer.ids, at, name);
     });
+  if (detectShell() === "tv") return <TVOptions
+    title={layer.ids.length === 1
+      ? t(layer.mode === "move" ? "move.titleOne.move" : "move.titleOne.copy", { name: findNode(layer.ids[0])?.name ?? "" })
+      : t(layer.mode === "move" ? "move.titleMany.move" : "move.titleMany.copy", { n: layer.ids.length })}
+    onClose={nav.close}
+    className="tv-destination-picker"
+    actions={<Button variant="primary" onClick={run}>{t(layer.mode === "move" ? "move.btn.move" : "move.btn.copy", { name: here?.name ?? t("nav.myDrive") })}</Button>}
+  >
+    <p className="mb-5 text-[20px] font-semibold break-words">{here?.name ?? t("nav.myDrive")}</p>
+    {at !== 0 && <button key={`up-${at}`} onClick={() => setAt(here?.parent_id ?? 0)}><CornerLeftUp />{t("nav.upOne")}</button>}
+    {at !== 0 && <hr />}
+    {children.length === 0 && <p className="py-8 text-[18px] text-fg-3">{t("move.noSub")}</p>}
+    {children.map(f => <button key={f.id} onClick={() => setAt(f.id)}><FileIcon node={f} /><span className="min-w-0 flex-1 break-words">{f.name}</span><ChevronRight /></button>)}
+  </TVOptions>;
   return (
     <Dialog onClose={nav.close} width={520}>
       <h2 className="text-[16px] font-semibold">

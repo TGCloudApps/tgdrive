@@ -1,3 +1,5 @@
+import { detectShell } from "@tgcloud/ui/core/platform";
+import { CONTROLLER_EVENT, type ControllerEvent } from "@tgcloud/ui/tv/events";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { Node } from "../core/api";
@@ -10,6 +12,8 @@ import { endDrag, startDrag, useDrop } from "./dnd";
 import { backgroundMenu, cmd, itemMenu, useDesk } from "./state";
 import { t } from "../i18n";
 import { t as ui } from "@tgcloud/ui/i18n/ui";
+
+const controller = detectShell() === "tv";
 
 /** Click, Ctrl/⌘+click and Shift+click, as in a file manager. */
 function select(e: React.MouseEvent, n: Node) {
@@ -46,6 +50,26 @@ export function FileView({ nodes, sortable = true }: { nodes: Node[]; sortable?:
   const list = sortable ? sortNodes(nodes, view.sort, view.asc) : nodes;
   const pane = useRef<HTMLDivElement>(null);
   const band = useRubberBand(pane);
+  useEffect(() => {
+    const el = pane.current;
+    if (!el || !controller) return;
+    const handle = (event: Event) => {
+      const e = event as ControllerEvent;
+      const target = (e.target as HTMLElement).closest<HTMLElement>("[data-tv-item][data-id]");
+      const node = list.find(n => n.id === Number(target?.dataset.id));
+      if (!node) return;
+      if (e.detail.key === "Enter") cmd.open(node);
+      else if (e.detail.key === "x") useSelection.getState().toggle(node.id);
+      else if (e.detail.key === "ContextMenu") {
+        const sel = useSelection.getState();
+        if (!sel.ids.has(node.id)) sel.set([node.id], node.id);
+        openMenu(0,0,itemMenu());
+      } else return;
+      e.preventDefault(); e.stopPropagation();
+    };
+    el.addEventListener(CONTROLLER_EVENT, handle);
+    return () => el.removeEventListener(CONTROLLER_EVENT, handle);
+  }, [list]);
 
   useEffect(() => {
     useDesk.setState({ visible: list });
@@ -98,7 +122,7 @@ function Table({ list, sortable }: { list: Node[]; sortable: boolean }) {
                 aria-sort={active ? (view.asc ? "ascending" : "descending") : undefined}
                 className={`h-10 border-b border-hairline px-3 text-[11px] font-semibold tracking-[0.06em] text-fg-2 uppercase ${c.className} ${c.align === "right" ? "text-right" : "text-left"}`}
               >
-                {sortable ? (
+                {sortable && detectShell() !== "tv" ? (
                   <button
                     onClick={() => view.set(active ? { asc: !view.asc } : { sort: c.key, asc: c.key === "name" })}
                     className={`group inline-flex items-center gap-1 uppercase hover:text-fg ${c.align === "right" ? "flex-row-reverse" : ""}`}
@@ -144,6 +168,10 @@ function Row({ node }: { node: Node }) {
     <tr
       ref={ref}
       data-id={node.id}
+      data-tv-item={controller ? "" : undefined}
+      data-tv-options={controller ? "" : undefined}
+      tabIndex={controller ? 0 : undefined}
+      aria-label={controller ? node.name : undefined}
       draggable={!renaming}
       onDragStart={(e) => startDrag(e, node)}
       onDragEnd={endDrag}
@@ -153,6 +181,7 @@ function Row({ node }: { node: Node }) {
         if (e.button === 0 && !(selected && !e.ctrlKey && !e.metaKey && !e.shiftKey)) select(e, node);
       }}
       onClick={(e) => {
+        if (controller) return cmd.open(node);
         // A plain click on an already selected item (no modifier) collapses the selection to it.
         if (selected && !e.ctrlKey && !e.metaKey && !e.shiftKey && useSelection.getState().ids.size > 1) select(e, node);
       }}
@@ -196,6 +225,10 @@ function Card({ node }: { node: Node }) {
   return (
     <div
       data-id={node.id}
+      data-tv-item={controller ? "" : undefined}
+      data-tv-options={controller ? "" : undefined}
+      tabIndex={controller ? 0 : undefined}
+      aria-label={controller ? node.name : undefined}
       draggable={!renaming}
       onDragStart={(e) => startDrag(e, node)}
       onDragEnd={endDrag}

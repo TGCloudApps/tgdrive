@@ -1,3 +1,4 @@
+import { canTrash } from "@tgcloud/ui/core/vault";
 /**
  * TGDrive viewer: the shared lightbox with the file actions
  * (download, share, trash) and the node details.
@@ -11,6 +12,7 @@ import { actions, findNode } from "../core/data";
 import { nav, useLayers, useRoute, type Layer } from "../core/nav";
 import { DetailRows } from "./Details";
 import { t } from "../i18n";
+import { t as tc } from "@tgcloud/ui/i18n/ui";
 import { t as ui } from "@tgcloud/ui/i18n/ui";
 
 const go = (id: number, siblings: number[]) => nav.replaceTop({ type: "viewer", id, siblings });
@@ -25,7 +27,7 @@ export function Viewer({ layer, touch }: { layer: Extract<Layer, { type: "viewer
     else if (touch) actions.saveAs(node);
     else transfers.download([node.id], () => nav.closeThen(() => nav.dest("transfers")));
   };
-  const purge = (node: Node) => nav.open({ type: "confirm", action: "purge", ids: [node.id] });
+  const purge = (node: Node) => canTrash() && nav.open({ type: "confirm", action: "purge", ids: [node.id] });
 
   return (
     <Lightbox<Node>
@@ -42,14 +44,15 @@ export function Viewer({ layer, touch }: { layer: Extract<Layer, { type: "viewer
       menu={(node, { leave }): LightboxMenuItem[] =>
         inTrash
           ? [
-              { label: ui("common.restore"), icon: <RotateCcw />, run: () => leave(() => actions.restore([node.id])) },
-              { label: t("act.purge"), icon: <Trash2 />, danger: true, run: () => purge(node) },
+              { capability: "write" as const, label: ui("common.restore"), icon: <RotateCcw />, run: () => leave(() => actions.restore([node.id])) },
+              ...(canTrash() ? [{ capability: "trash" as const, label: t("act.purge"), icon: <Trash2 />, danger: true, run: () => purge(node) }] : []),
             ]
           : [
               ...(onAndroid ? [{ label: ui("common.share"), icon: <Share2 />, run: () => void transfers.share(node) }] : []),
               { label: ui("common.download"), icon: <Download />, run: () => save(node) },
               { label: t("act.sendVaultMenu"), icon: <Send />, run: () => nav.open({ type: "send-vault", ids: [node.id] }) },
-              { label: t("act.trash"), icon: <Trash2 />, danger: true, run: () => leave(() => actions.trash([node.id])) },
+              { label: tc("cross.title", { app: "TGPhotos" }), icon: <Send />, run: () => nav.open({ type: "send-vault", other: true, ids: [node.id] }) },
+              ...(canTrash() ? [{ capability: "trash" as const, label: t("act.trash"), icon: <Trash2 />, danger: true, run: () => leave(() => actions.trash([node.id])) }] : []),
             ]
       }
       openInfoTouch={() => nav.open({ type: "details", id: layer.id })}
@@ -69,10 +72,10 @@ export function Viewer({ layer, touch }: { layer: Extract<Layer, { type: "viewer
           )}
           {inTrash ? (
             <>
-              <HudButton touch={touch} label={ui("common.restore")} onClick={() => leave(() => actions.restore([node.id]))}>
+              <HudButton capability="write" touch={touch} label={ui("common.restore")} onClick={() => leave(() => actions.restore([node.id]))}>
                 <RotateCcw />
               </HudButton>
-              <HudButton touch={touch} label={t("act.purgeKey")} onClick={() => purge(node)} danger>
+              <HudButton capability="trash" touch={touch} label={t("act.purgeKey")} onClick={() => purge(node)} danger>
                 <Trash2 />
               </HudButton>
             </>
@@ -81,7 +84,7 @@ export function Viewer({ layer, touch }: { layer: Extract<Layer, { type: "viewer
               <HudButton touch={touch} label={touch ? ui("common.download") : t("act.downloadD")} onClick={() => save(node)}>
                 <Download />
               </HudButton>
-              <HudButton touch={touch} label={t("act.trashKey")} onClick={() => leave(() => actions.trash([node.id]))}>
+              <HudButton capability="trash" touch={touch} label={t("act.trashKey")} onClick={() => leave(() => actions.trash([node.id]))}>
                 <Trash2 />
               </HudButton>
             </>
