@@ -30,6 +30,9 @@ pub async fn list(vaults: &Vaults<Db>) -> Result<Vec<VaultView>> {
                 current: false,
                 can_post: ch.rights.is_none_or(|r| r.can_post()),
                 can_rename: ch.rights.is_none_or(|r| r.can_rename()),
+                can_trash: ch.rights.is_some_and(|r| r.can_trash()),
+                can_members: ch.rights.is_some_and(|r| r.creator || r.admin),
+                can_invite: ch.rights.is_some_and(|r| r.creator || r.invite),
                 can_delete: ch.rights.is_some_and(|r| r.creator),
                 photo: ch.photo.map(|p| p.to_string()),
             });

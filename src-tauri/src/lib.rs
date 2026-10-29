@@ -95,6 +95,7 @@ fn copy_nodes(app: State<'_, Core>, ids: Vec<i64>, parent: i64) -> Result<()> {
 
 #[tauri::command]
 fn trash(app: State<'_, Core>, ids: Vec<i64>) -> Result<()> {
+    app.vaults.check_trash()?;
     let db = writable(&app)?;
     ids.iter().try_for_each(|id| db.set_trashed(*id, true))
 }
@@ -107,12 +108,14 @@ fn restore(app: State<'_, Core>, ids: Vec<i64>) -> Result<()> {
 
 #[tauri::command]
 async fn purge(app: State<'_, Core>, ids: Vec<i64>) -> Result<()> {
+    app.vaults.check_trash()?;
     let orphans = writable(&app)?.purge(&ids)?;
     app.tg.delete(&orphans).await
 }
 
 #[tauri::command]
 async fn empty_trash(app: State<'_, Core>) -> Result<()> {
+    app.vaults.check_trash()?;
     let db = writable(&app)?;
     let orphans = db.purge(&db.trashed_ids()?)?;
     app.tg.delete(&orphans).await
@@ -149,6 +152,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_tg_controller::init())
         .setup(|app| {
             let api_id = env!("TG_API_ID").parse().expect("TG_API_ID numérico");
             let core = tg_app::Core::<Db>::start(app, SPEC, api_id, env!("TG_API_HASH"), axum::Router::new())?;
@@ -173,6 +177,16 @@ pub fn run() {
             unlock_vault,
             rename_vault,
             vault_link,
+            cross_destinations,
+            cross_locations,
+            cross_create_folder,
+            cross_send,
+            vault_invite_candidate,
+            vault_contacts,
+            vault_member_photo,
+            vault_access,
+            vault_members,
+            vault_member_change,
             delete_vault,
             copy_to_vault,
             copies,
