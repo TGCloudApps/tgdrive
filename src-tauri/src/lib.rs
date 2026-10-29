@@ -149,6 +149,7 @@ pub fn run() {
     tg_core::log::init();
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
@@ -161,6 +162,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            startup_environment, startup_window, startup_update, window_menu,
             status,
             client_log,
             set_locale,
@@ -222,6 +224,7 @@ pub fn run() {
             transfers_bulk,
             transfer_open,
             open_release,
+            open_external_url,
             peek_open,
             me,
             upload_uris,
