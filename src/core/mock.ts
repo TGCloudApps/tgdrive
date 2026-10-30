@@ -17,30 +17,30 @@ function node(id: number, parent_id: number, name: string, mime = "", size = 0, 
 }
 
 const nodes: Node[] = [
-  node(1, 0, "Documentos", "", 0, 30 * day),
-  node(2, 0, "Fotos", "", 0, 20 * day),
-  node(3, 0, "Vídeos", "", 0, 10 * day),
-  node(4, 1, "Contratos", "", 0, 9 * day),
-  node(5, 2, "Viagem 2025", "", 0, 200 * day),
-  node(10, 0, "relatorio-anual.pdf", "application/pdf", 2_481_331, 2 * day),
-  node(11, 0, "backup-servidor.tar.gz", "application/gzip", 3_221_225_472, 5 * day),
-  node(12, 0, "notas.md", "text/markdown", 4_210, 3600),
-  node(13, 1, "proposta.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 182_004, 40 * day),
-  node(14, 1, "planilha-custos.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 92_133, 12 * day),
-  node(15, 2, "praia.jpg", "image/jpeg", 4_812_002, 6 * day),
-  node(16, 2, "por-do-sol.png", "image/png", 9_120_442, 6 * day),
-  node(21, 2, "montanha.jpg", "image/jpeg", 3_120_442, 7 * day),
-  node(17, 3, "apresentacao.mp4", "video/mp4", 734_003_200, 1 * day),
+  node(1, 0, "Documents", "", 0, 30 * day),
+  node(2, 0, "Photos", "", 0, 20 * day),
+  node(3, 0, "Videos", "", 0, 10 * day),
+  node(4, 1, "Contracts", "", 0, 9 * day),
+  node(5, 2, "Trip 2025", "", 0, 200 * day),
+  node(10, 0, "annual-report.pdf", "application/pdf", 2_481_331, 2 * day),
+  node(11, 0, "server-backup.tar.gz", "application/gzip", 3_221_225_472, 5 * day),
+  node(12, 0, "notes.md", "text/markdown", 4_210, 3600),
+  node(13, 1, "proposal.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 182_004, 40 * day),
+  node(14, 1, "costs.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 92_133, 12 * day),
+  node(15, 2, "beach.jpg", "image/jpeg", 4_812_002, 6 * day),
+  node(16, 2, "sunset.png", "image/png", 9_120_442, 6 * day),
+  node(21, 2, "mountain.jpg", "image/jpeg", 3_120_442, 7 * day),
+  node(17, 3, "presentation.mp4", "video/mp4", 734_003_200, 1 * day),
   node(18, 3, "podcast-ep12.mp3", "audio/mpeg", 58_720_256, 4 * day),
-  node(19, 4, "contrato-locacao.pdf", "application/pdf", 512_440, 300 * day),
-  node(20, 0, "fontes.zip", "application/zip", 12_582_912, 400 * day),
+  node(19, 4, "rental-agreement.pdf", "application/pdf", 512_440, 300 * day),
+  node(20, 0, "fonts.zip", "application/zip", 12_582_912, 400 * day),
 ];
 
 type MockVault = { id: number; name: string; title: string; valid: boolean; unsupported: boolean; legacy: boolean; created_at: number | null; current: boolean };
 const vaults: MockVault[] = [
-  { id: 1, name: "Pessoal", title: "Pessoal.tgdrive", valid: true, unsupported: false, legacy: false, created_at: Date.now() - 40 * day * 1000, current: false },
-  { id: 2, name: "Trabalho", title: "Trabalho.tgdrive", valid: true, unsupported: false, legacy: false, created_at: Date.now() - 12 * day * 1000, current: false },
-  { id: 3, name: "Fotos antigas", title: "Fotos antigas.tgdrive", valid: false, unsupported: false, legacy: false, created_at: null, current: false },
+  { id: 1, name: "Personal", title: "Personal.tgdrive", valid: true, unsupported: false, legacy: false, created_at: Date.now() - 40 * day * 1000, current: false },
+  { id: 2, name: "Work", title: "Work.tgdrive", valid: true, unsupported: false, legacy: false, created_at: Date.now() - 12 * day * 1000, current: false },
+  { id: 3, name: "Old photos", title: "Old photos.tgdrive", valid: false, unsupported: false, legacy: false, created_at: null, current: false },
   { id: 4, name: "TGDrive", title: "TGDrive", valid: false, unsupported: false, legacy: true, created_at: null, current: false },
 ].map(mockVaultPermissions);
 let currentVault: MockVault | null = new URLSearchParams(location.search).has("novault") ? null : vaults[0];
@@ -57,12 +57,12 @@ const descendants = (id: number): number[] => nodes.filter((n) => n.parent_id ==
 type Args = Record<string, unknown>;
 
 let mockTransfers = [
-    { id: 1, kind: "down", state: "active", name: "apresentacao.mp4", size: 734_003_200, done: 301_000_000, src: "", dest: "/home/u/Downloads/apresentacao.mp4", parent_id: 0, mime: "video/mp4", error: null, created_at: Date.now(), updated_at: Date.now() },
-    { id: 2, kind: "down", state: "queued", name: "backup-servidor.tar.gz", size: 3_221_225_472, done: 0, src: "", dest: "/home/u/Downloads/backup-servidor.tar.gz", parent_id: 0, mime: "application/gzip", error: null, created_at: Date.now(), updated_at: Date.now() },
-    { id: 3, kind: "down", state: "done", name: "relatorio-anual.pdf", size: 2_481_331, done: 2_481_331, src: "", dest: "/home/u/Downloads/relatorio-anual.pdf", parent_id: 0, mime: "application/pdf", error: null, created_at: Date.now(), updated_at: Date.now() },
-    { id: 4, kind: "down", state: "error", name: "fontes.zip", size: 12_582_912, done: 4_000_000, src: "", dest: "/home/u/Downloads/fontes.zip", parent_id: 0, mime: "application/zip", error: "o conteúdo baixado não confere com o original (sha256)", created_at: Date.now(), updated_at: Date.now() },
-    { id: 5, kind: "up", state: "paused", name: "ferias-2026.mov", size: 5_368_709_120, done: 1_610_612_736, src: "/home/u/Videos/ferias-2026.mov", dest: "", parent_id: 0, mime: "video/quicktime", error: null, created_at: Date.now(), updated_at: Date.now() },
-    { id: 6, kind: "up", state: "done", name: "notas.md", size: 4_210, done: 4_210, src: "/home/u/notas.md", dest: "", parent_id: 0, mime: "text/markdown", error: null, created_at: Date.now(), updated_at: Date.now() },
+    { id: 1, kind: "down", state: "active", name: "presentation.mp4", size: 734_003_200, done: 301_000_000, src: "", dest: "/home/u/Downloads/presentation.mp4", parent_id: 0, mime: "video/mp4", error: null, created_at: Date.now(), updated_at: Date.now() },
+    { id: 2, kind: "down", state: "queued", name: "server-backup.tar.gz", size: 3_221_225_472, done: 0, src: "", dest: "/home/u/Downloads/server-backup.tar.gz", parent_id: 0, mime: "application/gzip", error: null, created_at: Date.now(), updated_at: Date.now() },
+    { id: 3, kind: "down", state: "done", name: "annual-report.pdf", size: 2_481_331, done: 2_481_331, src: "", dest: "/home/u/Downloads/annual-report.pdf", parent_id: 0, mime: "application/pdf", error: null, created_at: Date.now(), updated_at: Date.now() },
+    { id: 4, kind: "down", state: "error", name: "fonts.zip", size: 12_582_912, done: 4_000_000, src: "", dest: "/home/u/Downloads/fonts.zip", parent_id: 0, mime: "application/zip", error: "o conteúdo baixado não confere com o original (sha256)", created_at: Date.now(), updated_at: Date.now() },
+    { id: 5, kind: "up", state: "paused", name: "holiday-2026.mov", size: 5_368_709_120, done: 1_610_612_736, src: "/home/u/Videos/holiday-2026.mov", dest: "", parent_id: 0, mime: "video/quicktime", error: null, created_at: Date.now(), updated_at: Date.now() },
+    { id: 6, kind: "up", state: "done", name: "notes.md", size: 4_210, done: 4_210, src: "/home/u/notes.md", dest: "", parent_id: 0, mime: "text/markdown", error: null, created_at: Date.now(), updated_at: Date.now() },
   ];
 function changeTransfer(id: number, state: "paused" | "queued" | "canceled") {
   mockTransfers = mockTransfers.map(item => item.id === id ? {...item, state, error:null} : item);
@@ -75,7 +75,7 @@ function removeTransfer(id: number) {
 
 const handlers: Record<string, (a: Args) => unknown> = {
   ...vaultMock("tgdrive"),
-  peek_open: () => ({ items: Array.from({length: 24}, (_,i) => ({ uid: `preview-${i+1}`, name: `IMG_${i+1}.jpg`, mime: "image/jpeg", date: now - i * 86400, thumb: true })), albums: [{ uid: "preview-album", name: "Viagens", items: ["preview-1","preview-2","preview-3"] }] }),
+  peek_open: () => ({ items: Array.from({length: 24}, (_,i) => ({ uid: `preview-${i+1}`, name: `IMG_${i+1}.jpg`, mime: "image/jpeg", date: now - i * 86400, thumb: true })), albums: [{ uid: "preview-album", name: "Trips", items: ["preview-1","preview-2","preview-3"] }] }),
   status: () => ({ authorized: true, port: 0, vault: currentVault }),
   sync_now: () => ({ pulled: 0, pushed: 0, compacted: false }),
   kick_sync: () => {},
@@ -164,11 +164,11 @@ const handlers: Record<string, (a: Args) => unknown> = {
   copies: () => [],
   copies_clear: () => {},
   rename_vault: (a) => ({ id: a.id, name: String(a.name), title: `${a.name}`, valid: true, unsupported: false, legacy: false, created_at: Date.now(), current: false }),
-  import_sources: () => [{ id: 7, name: "Família", title: "Família.tgphotos" }],
+  import_sources: () => [{ id: 7, name: "Family", title: "Family.tgphotos" }],
   import_browse: () => ({
     albums: [
       { uid: "a1", name: "Viagem", count: 3 },
-      { uid: "a2", name: "Aniversário", count: 2 },
+      { uid: "a2", name: "Birthday", count: 2 },
     ],
     media: Array.from({ length: 8 }, (_, i) => ({
       uid: `m${i}`,
