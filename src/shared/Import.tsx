@@ -1,3 +1,4 @@
+import { AppLogo } from "@tgcloud/ui/ui/AppLogo";
 import { useVaultPermission } from "@tgcloud/ui/core/vaultPermissions";
 import { VaultPermissionNotice } from "@tgcloud/ui/ui/VaultPermissionNotice";
 import { currentVault } from "@tgcloud/ui/core/vault";
@@ -7,7 +8,7 @@ import { currentVault } from "@tgcloud/ui/core/vault";
  * downloaded again).
  */
 import { useEffect, useState } from "react";
-import { Check, ChevronRight, Images, Loader2 } from "lucide-react";
+import { Check, ChevronRight, Loader2 } from "lucide-react";
 import { formatSize } from "@tgcloud/ui/core/format";
 import { importSources, runImport, type ForeignVault } from "@tgcloud/ui/core/importer";
 import { errText, invoke } from "@tgcloud/ui/core/server";
@@ -58,7 +59,7 @@ export function ImportView({ touch, parent }: { touch: boolean; parent: number }
       <div className="pb-2">
         {vaults.map((v) => (
           <button key={v.id} onClick={() => setVault(v)} className={`flex w-full items-center gap-3 text-left ${row} ${touch ? "active:bg-s4" : "hover:bg-s3"}`}>
-            <Images size={20} className="shrink-0 text-brand" />
+            <AppLogo id="tgphotos" size={28} className="shrink-0 text-brand" />
             <span className={`flex-1 truncate font-medium ${text}`}>{v.name}</span>
             <ChevronRight size={18} className="text-fg-3" />
           </button>
